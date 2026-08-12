@@ -67,3 +67,28 @@ lista_datas = pd.date_range(start=data_inicio, end=data_fim, freq='MS').strftime
 ['2025-01-01', '2025-02-01',...,'2026-03-01']
 
 ```
+
+####PowerBi
+each Text.Start(Text.From(_, "pt-PT"), 4) &"-"& Text.Middle(Text.From(_, "pt-PT"), 4, 2) &"-"& Text.End(Text.From(_, "pt-PT"), 2)
+let
+ Source = List.Dates(#date(2024,3,1), Number.From(DateTime.LocalNow())-Number.From(#date(2024,3,2)), #duration(1,0,0,0)),
+ #"Converted to Table" = Table.FromList(Source, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+ #"Renamed Columns" = Table.RenameColumns(#"Converted to Table",{{"Column1", "Data"}}),
+ #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Data", type date}}),
+ #"Inserted Year" = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Data]), Int64.Type),
+ #"Inserted Month" = Table.AddColumn(#"Inserted Year", "Month", each Date.Month([Data]), Int64.Type),
+ #"Inserted Month Name" = Table.AddColumn(#"Inserted Month", "Month Name", each Date.MonthName([Data]), type text),
+ #"Capitalized Each Word" = Table.TransformColumns(#"Inserted Month Name",{{"Month Name", Text.Proper, type text}}),
+ #"Extracted First Characters" = Table.TransformColumns(#"Capitalized Each Word", {{"Month Name", each Text.Start(_, 3), type text}}),
+ #"Inserted Day Name" = Table.AddColumn(#"Extracted First Characters", "Day Name", each Date.DayOfWeekName([Data]), type text),
+ #"Inserted Start of Week" = Table.AddColumn(#"Inserted Day Name", "Start of Week", each Date.StartOfWeek([Data]), type date),
+ #"Inserted Day" = Table.AddColumn(#"Inserted Start of Week", "Day", each Date.Day([Data]), Int64.Type),
+ #"Reordered Columns" = Table.ReorderColumns(#"Inserted Day",{"Data", "Year", "Month", "Month Name", "Day", "Day Name", "Start of Week"}),
+ #"Changed Type1" = Table.TransformColumnTypes(#"Reordered Columns",{{"Day", type text}}),
+ #"Added Custom" = Table.AddColumn(#"Changed Type1", "Custom", each [Day] & "/" & [Month Name]),
+ #"Renamed Columns1" = Table.RenameColumns(#"Added Custom",{{"Custom", "Diames"}})
+in
+ #"Renamed Columns1"
+
+
+
